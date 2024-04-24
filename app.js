@@ -1,11 +1,11 @@
 const express = require("express");
 const mysql = require("mysql");
 const app = express();
-
+const jwt = require('jsonwebtoken');
 const cors = require('cors');
-app.use(cors()); // Permitir solicitações de qualquer origem
+app.use(cors());
 
-const bodyParser = require('body-parser'); // Middleware para analisar o corpo da solicitação
+const bodyParser = require('body-parser');
 app.use(bodyParser.json());
 
 // Configurações do MySQL
@@ -25,9 +25,7 @@ connection.connect((err) => {
   console.log("Conexão com o MySQL estabelecida");
 });
 
-// Rota para cadastrar um novo usuário
 app.post('/cadastrar_usuario', (req, res) => {
-  // Obter os dados do corpo da solicitação
   const { nome, email, senha } = req.body;
   const sql = `INSERT INTO usuarios (nome, email, senha, createdAt, updatedAt) VALUES
                ('${nome}', '${email}', '${senha}', NOW(), NOW())`;
@@ -41,11 +39,9 @@ app.post('/cadastrar_usuario', (req, res) => {
 });
 
 app.post('/cadastrar_atividade', (req, res) => {
-  // Obter os dados do corpo da solicitação
   const { nome, descricao} = req.body;
   const sql = `INSERT INTO atividades (nome, descricao, createdAt, updatedAt) VALUES
                ('${nome}', '${descricao}', NOW(), NOW())`;
-  // Executar a consulta SQL
   connection.query(sql, (err, result) => {
     if (err) {
       console.error("Erro ao cadastrar usuário:", err);
@@ -55,15 +51,29 @@ app.post('/cadastrar_atividade', (req, res) => {
   });
 });
 
-// Rota para login de usuário
+function verificarToken(req, res, next) {
+  const token = req.headers['authorization'];
+
+  if (!token) {
+    return res.status(401).json({ message: 'Token não fornecido' });
+  }
+
+  jwt.verify(token, 'secreto', (err, decoded) => {
+    if (err) {
+      return res.status(401).json({ message: 'Token inválido' });
+    }
+
+    req.usuario = decoded;
+    next();
+  });
+}
+
+
 app.post('/login_usuario', (req, res) => {
-  // Obter os dados do corpo da solicitação
   const { email, senha } = req.body;
 
-  // Consulta SQL para verificar se o usuário com o email e senha fornecidos existe
   const sql = `SELECT * FROM usuarios WHERE email = '${email}' AND senha = '${senha}'`;
 
-  // Executar a consulta SQL
   connection.query(sql, (err, results) => {
     if (err) {
       console.error("Erro ao executar consulta SQL:", err);
@@ -71,41 +81,36 @@ app.post('/login_usuario', (req, res) => {
       return;
     }
 
-    // Verificar se algum usuário foi encontrado com o email e senha fornecidos
     if (results.length > 0) {
-      // Usuário encontrado, login bem-sucedido
-      res.status(200).json({ message: 'Login bem-sucedido!' });
+      // Usuário encontrado
+      const token = jwt.sign({ email: email }, 'secreto', { expiresIn: '1h' });
+      res.status(200).json({ token: token });
     } else {
-      // Nenhum usuário encontrado com o email e senha fornecidos, login falhou
+      // Usuário n encontrado 
       res.status(401).json({ error: 'Credenciais inválidas' });
     }
   });
 });
 
-// Rota para recuperar dados da tabela de usuários
+
 app.get("/users", (req, res) => {
-  // Consulta SQL para selecionar todos os usuários da tabela
+
   const sql = "SELECT * FROM usuarios";
 
-  // Executar a consulta SQL
   connection.query(sql, (err, results) => {
     if (err) {
       console.error("Erro ao executar consulta SQL:", err);
       res.status(500).json({ error: "Erro interno do servidor" });
       return;
     }
-
-    // Se a consulta for bem-sucedida, retornar os resultados como JSON
     res.json(results);
   });
 });
 
-// Rota para recuperar dados da tabela de entregas
+
 app.get("/deliveries", (req, res) => {
-  // Consulta SQL para selecionar todos os usuários da tabela
   const sql = "SELECT * FROM entregas";
 
-  // Executar a consulta SQL
   connection.query(sql, (err, results) => {
     if (err) {
       console.error("Erro ao executar consulta SQL:", err);
@@ -113,32 +118,26 @@ app.get("/deliveries", (req, res) => {
       return;
     }
 
-    // Se a consulta for bem-sucedida, retornar os resultados como JSON
     res.json(results);
   });
 });
 
-// Rota para recuperar dados da tabela de atividades
 app.get("/activities", (req, res) => {
-  // Consulta SQL para selecionar todos os usuários da tabela
   const sql = "SELECT * FROM atividades";
 
-  // Executar a consulta SQL
+
   connection.query(sql, (err, results) => {
     if (err) {
       console.error("Erro ao executar consulta SQL:", err);
       res.status(500).json({ error: "Erro interno do servidor" });
       return;
     }
-
-    // Se a consulta for bem-sucedida, retornar os resultados como JSON
     res.json(results);
   });
 });
 
 
 // Iniciar o servidor
-
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`Servidor rodando na porta ${PORT}`);
