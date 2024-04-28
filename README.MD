@@ -10,6 +10,7 @@ CREATE TABLE usuarios (
     createdAt DATETIME,
     updatedAt DATETIME
 );
+
 CREATE TABLE atividades (
     id INT AUTO_INCREMENT PRIMARY KEY,
     nome VARCHAR(100),
