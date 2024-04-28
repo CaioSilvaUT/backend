@@ -72,7 +72,7 @@ function verificarToken(req, res, next) {
 app.post('/login_usuario', (req, res) => {
   const { email, senha } = req.body;
 
-  const sql = `SELECT * FROM usuarios WHERE email = '${email}' AND senha = '${senha}'`;
+  const sql = `SELECT id FROM usuarios WHERE email = '${email}' AND senha = '${senha}'`;
 
   connection.query(sql, (err, results) => {
     if (err) {
@@ -82,15 +82,17 @@ app.post('/login_usuario', (req, res) => {
     }
 
     if (results.length > 0) {
-      // Usuário encontrado
-      const token = jwt.sign({ email: email }, 'secreto', { expiresIn: '1h' });
+      const userId = results[0].id;
+      // Cria o token JWT com o ID do usuário
+      const token = jwt.sign({ userId: userId }, 'secreto', { expiresIn: '5m' });
       res.status(200).json({ token: token });
     } else {
-      // Usuário n encontrado 
+      // Usuário não encontrado
       res.status(401).json({ error: 'Credenciais inválidas' });
     }
   });
 });
+
 
 
 app.get("/users", (req, res) => {
