@@ -28,3 +28,4 @@ CREATE TABLE entregas (
     FOREIGN KEY (userId) REFERENCES usuarios(id),
     FOREIGN KEY (activityId) REFERENCES atividades(id)
 );
+Exemplo de datetime: 2024-04-20 15:30:00
