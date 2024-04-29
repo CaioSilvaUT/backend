@@ -10,6 +10,7 @@ CREATE TABLE usuarios (
     createdAt DATETIME,
     updatedAt DATETIME
 );
+
 CREATE TABLE atividades (
     id INT AUTO_INCREMENT PRIMARY KEY,
     nome VARCHAR(100),
@@ -29,3 +30,6 @@ CREATE TABLE entregas (
     FOREIGN KEY (activityId) REFERENCES atividades(id)
 );
 Exemplo de datetime: 2024-04-20 15:30:00
+
+
+
